@@ -49,21 +49,6 @@ twitter-sentiment-analysis/
 └── README.md
 
 
----
-
-## File Purpose
-
-| File                        | Description |
-|---------------------------|-----------|
-| `src/preprocess.py`       | Cleans raw tweet text (removes URLs, mentions, stopwords, etc.) |
-| `src/train_model.py`      | Trains multiple models and saves the best one |
-| `src/predict.py`          | Utility for single and batch predictions |
-| `dashboard/app.py`        | Main Flask web server with all API endpoints |
-| `dashboard/templates/index.html` | Interactive frontend dashboard |
-| `data/twitter_training.csv` | Main training dataset |
-
----
-
 ## Setup & Installation
 
 ### 1. Clone the Repository
