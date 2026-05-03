@@ -1,105 +1,96 @@
-# Twitter Sentiment Analysis Project
+# Twitter Sentiment Analysis Dashboard
+
 **AI Course — Semester Project**
 
 ## Project Overview
-Social media tweets ko Positive / Negative / Neutral classify karna using Machine Learning.
 
-- **Dataset:** Twitter Training (74,682 tweets) + Validation (1,758 tweets)
-- **Model:** Logistic Regression + TF-IDF
-- **Accuracy:** 91.18% on validation set
-- **Dashboard:** Flask + Chart.js
+A web-based **Sentiment Analysis Dashboard** that classifies tweets as **Positive**, **Negative**, or **Neutral** using Machine Learning.
+
+- **Dataset**: 74,682 training tweets + 1,758 validation tweets
+- **Model**: TF-IDF + Machine Learning Classifiers
+- **Best Accuracy**: 91.18%
+- **Tech Stack**: Python, Flask, scikit-learn, Chart.js, Tweepy
+
+---
+
+## Features
+
+- Real-time sentiment prediction for any tweet
+- Interactive dashboard with charts and visualizations
+- Word cloud analysis by sentiment
+- Live Twitter data fetching and analysis (using X API)
+- Model performance comparison (Logistic Regression, SVM, Naive Bayes)
 
 ---
 
 ## Folder Structure
-
-```
-sentiment_project/
+twitter-sentiment-analysis/
 │
-├── data/                        ← Datasets
-│   ├── twitter_training.csv     ← 74,682 labeled tweets (training)
-│   └── twitter_validation.csv  ← 1,758 labeled tweets (testing)
+├── data/                          # Datasets
+│   ├── twitter_training.csv
+│   └── twitter_validation.csv
 │
-├── src/                         ← Python source code
-│   ├── preprocess.py            ← Text cleaning pipeline
-│   ├── train_model.py           ← Model training + evaluation
-│   └── predict.py               ← Single/batch prediction
+├── src/                           # Core Python code
+│   ├── preprocess.py              # Text cleaning
+│   ├── train_model.py             # Model training
+│   └── predict.py                 # Prediction utilities
 │
-├── models/                      ← Saved model files
-│   ├── sentiment_model.pkl      ← Trained model (generate karna hoga)
-│   └── metrics.json             ← Accuracy comparison
+├── models/                        # Trained models
+│   ├── sentiment_model.pkl
+│   └── metrics.json
 │
-├── dashboard/                   ← Web dashboard
-│   ├── app.py                   ← Flask server (main app)
+├── dashboard/                     # Web Application
+│   ├── app.py                     # Flask backend
 │   └── templates/
-│       └── index.html           ← Dashboard UI
+│       └── index.html             # Frontend (Dashboard)
 │
-├── notebooks/                   ← Jupyter notebooks (EDA etc)
-├── requirements.txt             ← Python dependencies
-└── README.md                    ← Ye file
-```
+├── notebooks/                     # Jupyter Notebooks (EDA)
+├── requirements.txt
+└── README.md
+
 
 ---
 
-## Konsa File Kya Karta Hai?
+## File Purpose
 
-| File | Kaam |
-|------|------|
-| `src/preprocess.py` | Raw tweet text clean karta hai (links, symbols, stopwords remove) |
-| `src/train_model.py` | 3 models train karta hai, best save karta hai |
-| `src/predict.py` | Naye tweet ka sentiment predict karta hai |
-| `dashboard/app.py` | Flask web server — API endpoints provide karta hai |
-| `dashboard/templates/index.html` | Dashboard UI — charts, wordcloud, live predictor |
-| `data/twitter_training.csv` | Training dataset |
-| `data/twitter_validation.csv` | Validation/test dataset |
+| File                        | Description |
+|---------------------------|-----------|
+| `src/preprocess.py`       | Cleans raw tweet text (removes URLs, mentions, stopwords, etc.) |
+| `src/train_model.py`      | Trains multiple models and saves the best one |
+| `src/predict.py`          | Utility for single and batch predictions |
+| `dashboard/app.py`        | Main Flask web server with all API endpoints |
+| `dashboard/templates/index.html` | Interactive frontend dashboard |
+| `data/twitter_training.csv` | Main training dataset |
 
 ---
 
-## Setup aur Run Karna
+## Setup & Installation
 
-### Step 1: Dependencies Install Karo
-```bash
+### 1. Clone the Repository
+### 2. Install Dependencies
 pip install -r requirements.txt
-```
 
-### Step 2: Model Train Karo
-```bash
+### 3.Train the Model
 python src/train_model.py
-```
-Output:
-```
-logistic       Accuracy: 0.9118 (91.18%)
-naive_bayes    Accuracy: 0.8540 (85.40%)
-svm            Accuracy: 0.8970 (89.70%)
-Best model: logistic
-Model saved → models/sentiment_model.pkl
-```
 
-### Step 3: Dashboard Chalao
-```bash
+### 4.Run the Dashboard
 python dashboard/app.py
-```
-Browser mein kholo: **http://localhost:5000**
 
----
+Open your browser and go to: http://localhost:5000
 
-## Dashboard Features
-- **Stats Cards:** Total tweets, Positive/Negative/Neutral count
-- **Doughnut Chart:** Overall sentiment distribution
-- **Stacked Bar Chart:** Sentiment by topic
-- **Topic Count Chart:** Top 8 topics
-- **Word Cloud:** Most common words per sentiment
-- **Model Metrics:** 3 models accuracy comparison
-- **Live Predictor:** Apna tweet type karo, real-time prediction pao
+Dashboard Features
 
----
+Overall sentiment distribution (Doughnut Chart)
+Sentiment analysis by topic (Stacked Bar Chart)
+Top topics by tweet volume
+Dynamic word clouds for each sentiment
+Live tweet predictor (type any text)
+Real-time Twitter fetching and sentiment analysis
+Model performance metrics
 
-## Dataset Info
-- **Sentiments:** Positive, Negative, Neutral, Irrelevant
-- **Topics:** Microsoft, Verizon, Google, Amazon, Gaming companies, etc.
-- **Columns:** `id, topic, sentiment, text`
-- Irrelevant tweets training se remove kar diye
 
----
+Dataset Information
 
-*Submitted by: AI Course Students | April 2026*
+Sentiments: Positive, Negative, Neutral, Irrelevant
+Topics: Microsoft, Google, Amazon, Verizon, gaming companies, etc.
+Only relevant (non-Irrelevant) tweets are used for training
