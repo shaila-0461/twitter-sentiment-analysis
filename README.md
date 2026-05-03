@@ -21,33 +21,6 @@ A web-based **Sentiment Analysis Dashboard** that classifies tweets as **Positiv
 - Live Twitter data fetching and analysis (using X API)
 - Model performance comparison (Logistic Regression, SVM, Naive Bayes)
 
----
-
-## Folder Structure
-twitter-sentiment-analysis/
-│
-├── data/                          # Datasets
-│   ├── twitter_training.csv
-│   └── twitter_validation.csv
-│
-├── src/                           # Core Python code
-│   ├── preprocess.py              # Text cleaning
-│   ├── train_model.py             # Model training
-│   └── predict.py                 # Prediction utilities
-│
-├── models/                        # Trained models
-│   ├── sentiment_model.pkl
-│   └── metrics.json
-│
-├── dashboard/                     # Web Application
-│   ├── app.py                     # Flask backend
-│   └── templates/
-│       └── index.html             # Frontend (Dashboard)
-│
-├── notebooks/                     # Jupyter Notebooks (EDA)
-├── requirements.txt
-└── README.md
-
 
 ## Setup & Installation
 
