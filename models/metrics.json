@@ -1,0 +1,6 @@
+{
+  "logistic": 93.72,
+  "naive_bayes": 88.29,
+  "svm": 96.14,
+  "best_model": "svm"
+}

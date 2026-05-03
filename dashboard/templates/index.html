@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Twitter Sentiment Analysis Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:#f0f4f8;color:#1a202c;}
+
+  /* ── Header ── */
+  .header{background:#fff;padding:16px 32px;display:flex;align-items:center;gap:16px;
+          border-bottom:2px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .header img{width:42px;height:42px;}
+  .header h1{font-size:1.5rem;font-weight:700;color:#1da1f2;}
+
+  /* ── Stat Cards ── */
+  .stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:20px 24px 0;}
+  .stat-card{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;
+              box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #e8edf2;}
+  .stat-card .label{font-size:.72rem;color:#64748b;font-weight:600;text-transform:uppercase;
+                    letter-spacing:.5px;line-height:1.4;}
+  .stat-card .value{font-size:1.9rem;font-weight:700;color:#1da1f2;margin-top:8px;}
+
+  /* ── Grid ── */
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:16px 24px;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:0 24px 20px;}
+  .card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);
+        border:1px solid #e8edf2;}
+  .card h3{font-size:.85rem;font-weight:700;color:#1a202c;margin-bottom:14px;}
+
+  /* ── Chart containers ── */
+  .chart-wrap{position:relative;height:220px;}
+  .chart-wrap-sm{position:relative;height:200px;}
+
+  /* ── Topic filter ── */
+  .topic-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  .topic-btn{padding:4px 10px;border-radius:20px;border:1px solid #cbd5e0;background:#f7fafc;
+              font-size:.72rem;cursor:pointer;transition:all .15s;font-family:inherit;}
+  .topic-btn:hover{background:#ebf8ff;border-color:#1da1f2;}
+  .topic-btn.active{background:#1da1f2;color:#fff;border-color:#1da1f2;}
+
+  /* ── Predict box ── */
+  .predict-row{padding:0 24px 24px;}
+  .predict-card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);
+                border:1px solid #e8edf2;}
+  .predict-card h3{font-size:.85rem;font-weight:700;color:#1a202c;margin-bottom:12px;}
+  .predict-inner{display:flex;gap:10px;align-items:flex-start;}
+  .predict-card textarea{flex:1;border:1px solid #cbd5e0;border-radius:8px;padding:10px;
+                          font-family:inherit;font-size:.85rem;resize:vertical;min-height:72px;
+                          outline:none;transition:border .15s;}
+  .predict-card textarea:focus{border-color:#1da1f2;}
+  .predict-card button{padding:10px 22px;background:#1da1f2;color:#fff;border:none;
+                        border-radius:8px;cursor:pointer;font-weight:600;font-size:.85rem;
+                        font-family:inherit;transition:background .15s;white-space:nowrap;}
+  .predict-card button:hover{background:#0d8ed4;}
+  .result-pos{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+  .result-neg{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+  .result-neu{background:#fffbeb;color:#92400e;border:1px solid #fde68a;}
+
+  /* ── Live Progress Steps ── */
+  #progress-section{display:none;margin-top:16px;}
+  .steps-row{display:flex;align-items:center;gap:0;margin-bottom:16px;}
+  .step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
+  .step:not(:last-child)::after{content:'';position:absolute;top:14px;left:60%;width:80%;
+    height:2px;background:#e2e8f0;z-index:0;transition:background .4s;}
+  .step.done:not(:last-child)::after{background:#1da1f2;}
+  .step-circle{width:28px;height:28px;border-radius:50%;background:#e2e8f0;display:flex;
+                align-items:center;justify-content:center;font-size:.75rem;font-weight:700;
+                z-index:1;transition:all .3s;border:2px solid #e2e8f0;}
+  .step.active .step-circle{background:#1da1f2;color:#fff;border-color:#1da1f2;
+    animation:pulse-step .8s ease-in-out infinite;}
+  .step.done .step-circle{background:#22c55e;color:#fff;border-color:#22c55e;}
+  .step-label{font-size:.65rem;color:#64748b;margin-top:4px;font-weight:500;text-align:center;}
+  .step.active .step-label{color:#1da1f2;font-weight:700;}
+  .step.done .step-label{color:#166534;}
+  @keyframes pulse-step{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
+
+  /* ── Progress Bar ── */
+  .progress-bar-wrap{background:#f1f5f9;border-radius:20px;height:8px;overflow:hidden;margin-bottom:16px;}
+  .progress-bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#1da1f2,#22c55e);
+                      width:0%;transition:width .4s ease;position:relative;}
+  .progress-bar-fill::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);
+    animation:shimmer 1.2s infinite;}
+  @keyframes shimmer{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+
+  /* ── Result Panel ── */
+  #result-panel{display:none;}
+  .result-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:10px;
+                  font-weight:700;font-size:1rem;margin-bottom:12px;}
+  .result-emoji{font-size:2rem;}
+  .result-label{font-size:1.1rem;}
+  .result-conf{font-size:.8rem;font-weight:500;opacity:.8;margin-top:2px;}
+
+  /* ── Confidence Bars ── */
+  .conf-bars{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .conf-row{display:flex;align-items:center;gap:10px;}
+  .conf-name{width:70px;font-size:.78rem;font-weight:600;color:#475569;}
+  .conf-bar-wrap{flex:1;background:#f1f5f9;border-radius:20px;height:18px;overflow:hidden;}
+  .conf-bar-fill{height:100%;border-radius:20px;display:flex;align-items:center;
+                  padding-left:8px;font-size:.7rem;font-weight:700;color:#fff;
+                  width:0%;transition:width .8s cubic-bezier(.34,1.56,.64,1);}
+  .conf-pct{width:38px;font-size:.78rem;font-weight:700;text-align:right;}
+
+  /* ── Result Charts Row ── */
+  .result-charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;}
+  .result-chart-card{background:#f8fafc;border-radius:8px;padding:12px;border:1px solid #e8edf2;}
+  .result-chart-card h4{font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;}
+  .result-chart-wrap{height:130px;position:relative;}
+
+  /* ── History ── */
+  .history-section{margin-top:16px;border-top:1px solid #e8edf2;padding-top:12px;}
+  .history-section h4{font-size:.75rem;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;}
+  .history-list{display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;}
+  .history-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;background:#f8fafc;font-size:.75rem;}
+  .history-badge{padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700;white-space:nowrap;}
+  .history-text{flex:1;color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* ── Word cloud ── */
+  #wordcloud-canvas{width:100%;min-height:180px;display:flex;flex-wrap:wrap;
+                    gap:6px;align-items:center;justify-content:center;}
+  .wc-word{cursor:default;transition:opacity .2s;font-weight:600;}
+  .wc-word:hover{opacity:.7;}
+
+  /* ── Accuracy badge ── */
+  .acc-badge{display:inline-block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;
+              border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:600;margin-left:8px;}
+
+  /* ── Sentiment pill colors ── */
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600;}
+  .pill-pos{background:#dcfce7;color:#166534;}
+  .pill-neg{background:#fee2e2;color:#991b1b;}
+  .pill-neu{background:#fef9c3;color:#854d0e;}
+
+  /* ── Loader ── */
+  .loader{text-align:center;color:#94a3b8;padding:40px;font-size:.85rem;}
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-track{background:#f1f5f9;}
+  ::-webkit-scrollbar-thumb{background:#cbd5e0;border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <svg width="42" height="42" viewBox="0 0 24 24" fill="#1da1f2">
+    <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/>
+  </svg>
+  <h1>Twitter Sentiment Analysis
+    <span class="acc-badge">Model Accuracy: 91.18%</span>
+  </h1>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-row" id="stats-row">
+  <div class="stat-card"><div class="label">Total Tweets</div><div class="value" id="s-total">—</div></div>
+  <div class="stat-card"><div class="label">Positive Tweets</div><div class="value" id="s-pos" style="color:#22c55e">—</div></div>
+  <div class="stat-card"><div class="label">Negative Tweets</div><div class="value" id="s-neg" style="color:#ef4444">—</div></div>
+  <div class="stat-card"><div class="label">Neutral Tweets</div><div class="value" id="s-neu" style="color:#f59e0b">—</div></div>
+  <div class="stat-card"><div class="label">Total Topics</div><div class="value" id="s-topics" style="color:#8b5cf6">—</div></div>
+</div>
+
+<!-- Row 1: Charts -->
+<div class="grid">
+  <!-- Sentiment Distribution -->
+  <div class="card">
+    <h3>Overall Sentiment Distribution</h3>
+    <div class="chart-wrap"><canvas id="doughnutChart"></canvas></div>
+  </div>
+
+  <!-- Sentiment by Topic -->
+  <div class="card">
+    <h3>Sentiment Score by Topic</h3>
+    <div class="chart-wrap"><canvas id="topicBar"></canvas></div>
+  </div>
+
+  <!-- Top Topics -->
+  <div class="card">
+    <h3>Top 8 Topics by Tweet Count</h3>
+    <div class="chart-wrap"><canvas id="topicsChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Row 2: Word Cloud + Predict -->
+<div class="grid-2">
+  <!-- Word Cloud -->
+  <div class="card" style="grid-column:span 2">
+    <h3>Word Cloud by Sentiment
+      <span style="margin-left:10px;">
+        <button class="topic-btn active" onclick="loadWordCloud('Positive',this)" style="background:#dcfce7;color:#166534;border-color:#bbf7d0">Positive</button>
+        <button class="topic-btn" onclick="loadWordCloud('Negative',this)" style="">Negative</button>
+        <button class="topic-btn" onclick="loadWordCloud('Neutral',this)">Neutral</button>
+      </span>
+    </h3>
+    <div id="wordcloud-canvas"><div class="loader">Loading words...</div></div>
+  </div>
+
+  <!-- Model Metrics -->
+  <div class="card">
+    <h3>Model Performance</h3>
+    <div class="chart-wrap-sm"><canvas id="metricsChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Live Predict -->
+<div class="predict-row">
+  <div class="predict-card">
+    <h3>🔍 Live Sentiment Predictor</h3>
+    <div class="predict-inner">
+      <textarea id="tweet-input" placeholder="Enter your tweet here... (Ctrl+Enter to analyze)"></textarea>
+      <button onclick="predictSentiment()" id="analyze-btn">Analyze →</button>
+    </div>
+
+    <!-- Live Progress Steps -->
+    <div id="progress-section">
+      <div class="steps-row" id="steps-row">
+        <div class="step" id="step-1">
+          <div class="step-circle">1</div>
+          <div class="step-label">Text Input</div>
+        </div>
+        <div class="step" id="step-2">
+          <div class="step-circle">2</div>
+          <div class="step-label">Cleaning</div>
+        </div>
+        <div class="step" id="step-3">
+          <div class="step-circle">3</div>
+          <div class="step-label">TF-IDF</div>
+        </div>
+        <div class="step" id="step-4">
+          <div class="step-circle">4</div>
+          <div class="step-label">Model</div>
+        </div>
+        <div class="step" id="step-5">
+          <div class="step-circle">✓</div>
+          <div class="step-label">Result</div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Result Panel -->
+    <div id="result-panel">
+      <!-- Result Header -->
+      <div class="result-header" id="result-header">
+        <div class="result-emoji" id="result-emoji"></div>
+        <div>
+          <div class="result-label" id="result-label"></div>
+          <div class="result-conf" id="result-conf-text"></div>
+        </div>
+      </div>
+
+      <!-- Confidence Bars -->
+      <div class="conf-bars" id="conf-bars"></div>
+
+      <!-- Charts Row -->
+      <div class="result-charts">
+        <div class="result-chart-card">
+          <h4>Confidence Breakdown</h4>
+          <div class="result-chart-wrap"><canvas id="predPieChart"></canvas></div>
+        </div>
+        <div class="result-chart-card">
+          <h4>Prediction History</h4>
+          <div class="result-chart-wrap"><canvas id="historyBarChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- History List -->
+      <div class="history-section">
+        <h4>📋 Recent Predictions</h4>
+        <div class="history-list" id="history-list"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Live Tweets Section -->
+<div class="predict-row">
+  <div class="predict-card">
+    <h3>🐦 Live Twitter Fetch & Analyze</h3>
+    <div class="predict-inner">
+      <input id="live-query" type="text" placeholder="Enter the topic... e.g. Pakistan, iPhone, Cricket"
+        style="flex:1;border:1px solid #cbd5e0;border-radius:8px;padding:10px;
+                font-family:inherit;font-size:.85rem;outline:none;transition:border .15s;"
+        onfocus="this.style.borderColor='#1da1f2'" onblur="this.style.borderColor='#cbd5e0'"/>
+      <select id="live-count"
+        style="border:1px solid #cbd5e0;border-radius:8px;padding:10px;font-family:inherit;
+                font-size:.85rem;outline:none;background:#fff;">
+        <option value="5">5 tweets</option>
+        <option value="10" selected>10 tweets</option>
+        <option value="20">20 tweets</option>
+      </select>
+      <button onclick="fetchLiveTweets()" id="live-btn"
+        style="padding:10px 22px;background:#1da1f2;color:#fff;border:none;border-radius:8px;
+               cursor:pointer;font-weight:600;font-size:.85rem;font-family:inherit;
+               transition:background .15s;white-space:nowrap;">
+        🔴 Fetch Live
+      </button>
+    </div>
+
+    <!-- Live Results Table -->
+    <div id="live-results" style="display:none;margin-top:16px;">
+      <div id="live-summary" style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;"></div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+          <thead>
+            <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+              <th style="padding:8px 12px;text-align:left;color:#64748b;font-weight:600;">#</th>
+              <th style="padding:8px 12px;text-align:left;color:#64748b;font-weight:600;">Tweet</th>
+              <th style="padding:8px 12px;text-align:center;color:#64748b;font-weight:600;">Sentiment</th>
+            </tr>
+          </thead>
+          <tbody id="live-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="live-error" style="display:none;margin-top:12px;padding:10px 14px;
+          background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:8px;font-size:.83rem;"></div>
+  </div>
+</div>
+
+<script>
+const COLORS = {
+  Positive: '#22c55e',
+  Negative: '#ef4444',
+  Neutral:  '#f59e0b',
+  Irrelevant: '#94a3b8'
+};
+
+let statsData = null;
+
+// ── Fetch stats & render all charts ──────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch('/api/stats');
+    statsData  = await res.json();
+
+    // Stat cards
+    document.getElementById('s-total').textContent  = statsData.total_tweets.toLocaleString();
+    document.getElementById('s-pos').textContent    = (statsData.overall_sentiment.Positive||0).toLocaleString();
+    document.getElementById('s-neg').textContent    = (statsData.overall_sentiment.Negative||0).toLocaleString();
+    document.getElementById('s-neu').textContent    = (statsData.overall_sentiment.Neutral||0).toLocaleString();
+    document.getElementById('s-topics').textContent = statsData.all_topics.length;
+
+    renderDoughnut(statsData.overall_sentiment);
+    renderTopicBar(statsData.sentiment_by_topic);
+    renderTopicsChart(statsData.sentiment_by_topic);
+    renderMetrics();
+    loadWordCloud('Positive');
+  } catch(e) {
+    console.error('Init error:', e);
+  }
+}
+
+// ── Doughnut ─────────────────────────────────────────────────────────────────
+function renderDoughnut(data) {
+  const labels = Object.keys(data);
+  const values = Object.values(data);
+  new Chart(document.getElementById('doughnutChart'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: labels.map(l => COLORS[l]||'#94a3b8'),
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } }
+      }
+    }
+  });
+}
+
+// ── Topic Bar ─────────────────────────────────────────────────────────────────
+function renderTopicBar(byTopic) {
+  const topics = Object.keys(byTopic);
+  const sentiments = ['Positive','Negative','Neutral'];
+  new Chart(document.getElementById('topicBar'), {
+    type: 'bar',
+    data: {
+      labels: topics.map(t => t.length > 12 ? t.slice(0,12)+'…' : t),
+      datasets: sentiments.map(s => ({
+        label: s,
+        data: topics.map(t => byTopic[t][s]||0),
+        backgroundColor: COLORS[s]+'cc',
+        borderColor: COLORS[s],
+        borderWidth: 1
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } } },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 9 } } },
+        y: { stacked: true, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ── Topics Count Chart ────────────────────────────────────────────────────────
+function renderTopicsChart(byTopic) {
+  const topics = Object.keys(byTopic).slice(0,8);
+  const totals = topics.map(t => {
+    const d = byTopic[t];
+    return (d.Positive||0) + (d.Negative||0) + (d.Neutral||0);
+  });
+  new Chart(document.getElementById('topicsChart'), {
+    type: 'bar',
+    data: {
+      labels: topics.map(t => t.length > 14 ? t.slice(0,14)+'…' : t),
+      datasets: [{
+        data: totals,
+        backgroundColor: '#1da1f2cc',
+        borderColor: '#1da1f2',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 9 } } },
+        y: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ── Model Metrics ─────────────────────────────────────────────────────────────
+function renderMetrics() {
+  new Chart(document.getElementById('metricsChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Logistic Reg', 'Naive Bayes', 'LinearSVC'],
+      datasets: [{
+        label: 'Accuracy %',
+        data: [91.18, 85.4, 89.7],
+        backgroundColor: ['#1da1f2cc','#94a3b8cc','#818cf8cc'],
+        borderColor:     ['#1da1f2',  '#94a3b8',  '#818cf8'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 70, max: 100, ticks: { font: { size: 10 }, callback: v => v+'%' } },
+        x: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ── Word Cloud ────────────────────────────────────────────────────────────────
+async function loadWordCloud(sentiment, btn) {
+  if (btn) {
+    document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  const canvas = document.getElementById('wordcloud-canvas');
+  canvas.innerHTML = '<div class="loader">Loading words...</div>';
+  try {
+    const res   = await fetch(`/api/wordcloud?sentiment=${sentiment}`);
+    const words = await res.json();
+    if (!words.length) { canvas.innerHTML = '<div class="loader">No words found</div>'; return; }
+
+    const max  = words[0].count;
+    const cols = sentiment === 'Positive'
+      ? ['#16a34a','#22c55e','#4ade80','#166534','#15803d']
+      : sentiment === 'Negative'
+      ? ['#dc2626','#ef4444','#f87171','#991b1b','#b91c1c']
+      : ['#d97706','#f59e0b','#fbbf24','#92400e','#b45309'];
+
+    canvas.innerHTML = words.map(({word, count}) => {
+      const size = 12 + (count / max) * 32;
+      const col  = cols[Math.floor(Math.random() * cols.length)];
+      return `<span class="wc-word" style="font-size:${size}px;color:${col}" title="${count} mentions">${word}</span>`;
+    }).join('');
+  } catch(e) {
+    canvas.innerHTML = '<div class="loader">Error loading words</div>';
+  }
+}
+
+// ── Live Predict with Progress + Charts ──────────────────────────────────────
+let predPieChart = null;
+let historyBarChart = null;
+const predHistory = []; // {text, sentiment}
+
+function setStep(n, progress) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById(`step-${i}`);
+    el.classList.remove('active','done');
+    if (i < n)  el.classList.add('done');
+    if (i === n) el.classList.add('active');
+  }
+  document.getElementById('progress-fill').style.width = progress + '%';
+}
+
+async function predictSentiment() {
+  const text = document.getElementById('tweet-input').value.trim();
+  if (!text) { alert('Kuch likho pehle!'); return; }
+
+  // Reset UI
+  document.getElementById('result-panel').style.display = 'none';
+  document.getElementById('progress-section').style.display = 'block';
+  document.getElementById('analyze-btn').disabled = true;
+  document.getElementById('analyze-btn').textContent = 'Analyzing...';
+
+  // Animate steps
+  setStep(1, 10);
+  await sleep(350);
+  setStep(2, 30);
+  await sleep(400);
+  setStep(3, 55);
+  await sleep(400);
+  setStep(4, 80);
+
+  try {
+    const res  = await fetch('/api/predict', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({text})
+    });
+    const data = await res.json();
+
+    setStep(5, 100);
+    await sleep(300);
+
+    showResult(data, text);
+  } catch(e) {
+    document.getElementById('progress-section').style.display = 'none';
+    alert('Error: Flask server chal raha hai? → python dashboard/app.py');
+  } finally {
+    document.getElementById('analyze-btn').disabled = false;
+    document.getElementById('analyze-btn').textContent = 'Analyze →';
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showResult(data, text) {
+  const s = data.sentiment;
+  const conf = data.confidence;
+
+  // Colors & emoji
+  const cfg = {
+    Positive: {emoji:'😊', bg:'#f0fdf4', color:'#166534', bar:'#22c55e', border:'#bbf7d0'},
+    Negative: {emoji:'😠', bg:'#fef2f2', color:'#991b1b', bar:'#ef4444', border:'#fecaca'},
+    Neutral:  {emoji:'😐', bg:'#fffbeb', color:'#92400e', bar:'#f59e0b', border:'#fde68a'},
+  };
+  const c = cfg[s] || cfg['Neutral'];
+
+  // Header
+  const hdr = document.getElementById('result-header');
+  hdr.style.background = c.bg;
+  hdr.style.color       = c.color;
+  hdr.style.border      = `1px solid ${c.border}`;
+  document.getElementById('result-emoji').textContent = c.emoji;
+  document.getElementById('result-label').innerHTML   = `Sentiment: <strong>${s}</strong>`;
+  document.getElementById('result-conf-text').textContent = `Confidence: ${conf[s]}%`;
+
+  // Confidence bars
+  const bars = document.getElementById('conf-bars');
+  bars.innerHTML = Object.entries(conf).map(([k, v]) => {
+    const bc = cfg[k] ? cfg[k].bar : '#94a3b8';
+    return `
+      <div class="conf-row">
+        <div class="conf-name">${k}</div>
+        <div class="conf-bar-wrap">
+          <div class="conf-bar-fill" style="background:${bc};width:0%" data-target="${v}">
+            ${v > 15 ? v+'%' : ''}
+          </div>
+        </div>
+        <div class="conf-pct" style="color:${bc}">${v}%</div>
+      </div>`;
+  }).join('');
+
+  // Animate bars after render
+  setTimeout(() => {
+    document.querySelectorAll('.conf-bar-fill').forEach(el => {
+      el.style.width = el.dataset.target + '%';
+    });
+  }, 50);
+
+  // Add to history
+  predHistory.unshift({text: text.slice(0,60), sentiment: s});
+  if (predHistory.length > 10) predHistory.pop();
+
+  // Pie chart — confidence breakdown
+  if (predPieChart) predPieChart.destroy();
+  predPieChart = new Chart(document.getElementById('predPieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(conf),
+      datasets: [{
+        data: Object.values(conf),
+        backgroundColor: Object.keys(conf).map(k => cfg[k]?.bar || '#94a3b8'),
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } }
+      },
+      animation: { duration: 800 }
+    }
+  });
+
+  // Bar chart — history
+  const hCounts = {Positive:0, Negative:0, Neutral:0};
+  predHistory.forEach(h => { if (hCounts[h.sentiment]!==undefined) hCounts[h.sentiment]++; });
+
+  if (historyBarChart) historyBarChart.destroy();
+  historyBarChart = new Chart(document.getElementById('historyBarChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Positive','Negative','Neutral'],
+      datasets: [{
+        data: [hCounts.Positive, hCounts.Negative, hCounts.Neutral],
+        backgroundColor: ['#22c55ecc','#ef4444cc','#f59e0bcc'],
+        borderColor:     ['#22c55e', '#ef4444', '#f59e0b'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 9 } } },
+        x: { ticks: { font: { size: 9 } } }
+      },
+      animation: { duration: 600 }
+    }
+  });
+
+  // History list
+  const hl = document.getElementById('history-list');
+  hl.innerHTML = predHistory.map(h => {
+    const hc = cfg[h.sentiment] || cfg['Neutral'];
+    return `<div class="history-item">
+      <span class="history-badge" style="background:${hc.bg};color:${hc.color};border:1px solid ${hc.border}">
+        ${h.sentiment}
+      </span>
+      <span class="history-text">${h.text}${h.text.length===60?'…':''}</span>
+    </div>`;
+  }).join('');
+
+  // Show result
+  document.getElementById('result-panel').style.display = 'block';
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  document.getElementById('tweet-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) predictSentiment();
+  });
+});
+
+// ── Live Tweets Fetch ─────────────────────────────────────────────────────────
+async function fetchLiveTweets() {
+  const query = document.getElementById('live-query').value.trim();
+  if (!query) { alert('Enter topic first!'); return; }
+
+  const count   = document.getElementById('live-count').value;
+  const btn     = document.getElementById('live-btn');
+  const results = document.getElementById('live-results');
+  const errDiv  = document.getElementById('live-error');
+
+  btn.disabled    = true;
+  btn.textContent = 'Fetching...';
+  results.style.display = 'none';
+  errDiv.style.display  = 'none';
+
+  try {
+    const res  = await fetch('/api/live_tweets', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({query, count: parseInt(count)})
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      errDiv.textContent    = '⚠️ ' + data.error;
+      errDiv.style.display  = 'block';
+      return;
+    }
+
+    // Summary pills
+    const counts = {Positive:0, Negative:0, Neutral:0, Irrelevant:0};
+    data.forEach(r => { if (counts[r.sentiment] !== undefined) counts[r.sentiment]++; });
+
+    const cfg = {
+      Positive:  {bg:'#dcfce7', color:'#166534', border:'#bbf7d0'},
+      Negative:  {bg:'#fee2e2', color:'#991b1b', border:'#fecaca'},
+      Neutral:   {bg:'#fef9c3', color:'#854d0e', border:'#fde68a'},
+      Irrelevant:{bg:'#f1f5f9', color:'#475569', border:'#e2e8f0'}
+    };
+
+    document.getElementById('live-summary').innerHTML =
+      Object.entries(counts).filter(([,v]) => v > 0).map(([k, v]) =>
+        `<span class="pill" style="background:${cfg[k].bg};color:${cfg[k].color};
+          border:1px solid ${cfg[k].border};padding:4px 12px;border-radius:20px;font-size:.78rem;">
+          ${k}: ${v}
+        </span>`
+      ).join('');
+
+    // Table rows
+    const emojis = {Positive:'😊', Negative:'😠', Neutral:'😐', Irrelevant:'🔕'};
+    document.getElementById('live-tbody').innerHTML = data.map((r, i) =>
+      `<tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:8px 12px;color:#94a3b8;">${i+1}</td>
+        <td style="padding:8px 12px;color:#334155;">${r.text.slice(0,100)}${r.text.length>100?'…':''}</td>
+        <td style="padding:8px 12px;text-align:center;">
+          <span style="background:${cfg[r.sentiment]?.bg||'#f1f5f9'};
+                        color:${cfg[r.sentiment]?.color||'#475569'};
+                        border:1px solid ${cfg[r.sentiment]?.border||'#e2e8f0'};
+                        padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:600;">
+            ${emojis[r.sentiment]||''} ${r.sentiment}
+          </span>
+        </td>
+      </tr>`
+    ).join('');
+
+    results.style.display = 'block';
+
+  } catch(e) {
+    errDiv.textContent   = '⚠️ Server error — check Keys in API';
+    errDiv.style.display = 'block';
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '🔴 Fetch Live';
+  }
+}
+</script>
+</body>
+</html>
