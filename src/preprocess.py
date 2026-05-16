@@ -1,9 +1,3 @@
-"""
-src/preprocess.py
------------------
-Text cleaning aur preprocessing pipeline
-"""
-
 import re
 import pandas as pd
 
@@ -18,13 +12,13 @@ STOPWORDS = {
 
 
 def clean_text(text: str) -> str:
-    """Single tweet ko clean karo"""
+    """clean single tweet""
     text = str(text).lower()
-    text = re.sub(r'http\S+|www\S+', '', text)          # URLs hatao
-    text = re.sub(r'@\w+', '', text)                     # Mentions hatao
-    text = re.sub(r'#(\w+)', r'\1', text)                # Hashtag symbol hatao
-    text = re.sub(r'[^a-z\s]', '', text)                 # Special chars hatao
-    text = re.sub(r'\s+', ' ', text).strip()             # Extra spaces hatao
+    text = re.sub(r'http\S+|www\S+', '', text)          # remove urls
+    text = re.sub(r'@\w+', '', text)                     #remove Mentions 
+    text = re.sub(r'#(\w+)', r'\1', text)                # remove Hashtag symbol
+    text = re.sub(r'[^a-z\s]', '', text)                 # remove Special chars 
+    text = re.sub(r'\s+', ' ', text).strip()             # remove Extra spaces h
     words = [w for w in text.split() if w not in STOPWORDS and len(w) > 2]
     return ' '.join(words)
 
