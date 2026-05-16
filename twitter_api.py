@@ -57,22 +57,22 @@ def analyze_live_tweets(query: str, count: int = 20) -> pd.DataFrame:
         for path in model_paths:
             if os.path.exists(path):
                 model = joblib.load(path)
-                print(f"✅ Model loaded from: {path}")
+                print(f" Model loaded from: {path}")
                 break
 
         if model is None:
-            print("❌ Model not found!")
+            print(" Model not found!")
             return pd.DataFrame()
 
         df['clean_text'] = df['text'].apply(clean_text)
         df['sentiment'] = model.predict(df['clean_text'])
         df['sentiment'] = df['sentiment'].map(LABEL_REVERSE)
 
-        print(f"✅ Success: {len(df)} tweets analyzed")
+        print(f" Success: {len(df)} tweets analyzed")
         return df[['text', 'sentiment', 'created_at']]
 
     except Exception as e:
-        print(f"❌ ERROR: {e}")
+        print(f" ERROR: {e}")
         import traceback
         traceback.print_exc()
         return pd.DataFrame()
