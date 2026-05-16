@@ -1,10 +1,3 @@
-"""
-src/train_model.py
-------------------
-Model train karo aur save karo
-Run: python src/train_model.py
-"""
-
 import pickle
 import json
 import sys
@@ -38,13 +31,13 @@ def train_and_evaluate():
     print("  Sentiment Analysis — Model Training")
     print("=" * 50)
 
-    # Data load karo
+    # Data load 
     print("\n[1/4] Loading data...")
     train = load_and_clean('data/twitter_training.csv')
     val   = load_and_clean('data/twitter_validation.csv')
     print(f"  Train: {len(train):,} | Val: {len(val):,}")
 
-    # Models compare karo
+    # Models compare 
     results = {}
     print("\n[2/4] Training models...")
     for name in ['logistic', 'naive_bayes', 'svm']:
@@ -55,7 +48,7 @@ def train_and_evaluate():
         results[name] = {'accuracy': round(acc * 100, 2), 'pipeline': pipe}
         print(f"  {name:<15} Accuracy: {acc:.4f} ({acc*100:.2f}%)")
 
-    # Best model select karo
+    # select best model
     best_name = max(results, key=lambda k: results[k]['accuracy'])
     best_pipe  = results[best_name]['pipeline']
     print(f"\n[3/4] Best model: {best_name} ({results[best_name]['accuracy']}%)")
@@ -71,7 +64,7 @@ def train_and_evaluate():
     with open('models/sentiment_model.pkl', 'wb') as f:
         pickle.dump(best_pipe, f)
 
-    # Metrics JSON mein save karo
+    # save JSON matrics 
     metrics = {k: v['accuracy'] for k, v in results.items()}
     metrics['best_model'] = best_name
     with open('models/metrics.json', 'w') as f:
@@ -79,7 +72,7 @@ def train_and_evaluate():
 
     print(f"\n  Model saved → models/sentiment_model.pkl")
     print(f"  Metrics saved → models/metrics.json")
-    print("\nDone! ✓")
+    print("\nDone! ")
     return best_pipe
 
 
