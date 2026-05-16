@@ -1,10 +1,3 @@
-"""
-dashboard/app.py
-----------------
-Flask web application — Twitter Sentiment Dashboard
-Run: python dashboard/app.py
-"""
-
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -18,7 +11,7 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# ── Globals ──────────────────────────────────────────────────────────────────
+# ── Globals 
 MODEL = None
 TRAIN_DF = None
 
@@ -52,7 +45,7 @@ def clean_text(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 
-# ── Routes ───────────────────────────────────────────────────────────────────
+# ── Routes
 
 @app.route('/')
 def index():
