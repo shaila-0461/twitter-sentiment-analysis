@@ -1,29 +1,22 @@
-"""
-src/predict.py
---------------
-Saved model se naya text predict karo
-"""
-
 import pickle
 import os
 from src.preprocess import clean_text
 
-
 def load_model(path: str = 'models/sentiment_model.pkl'):
     if not os.path.exists(path):
-        raise FileNotFoundError(f"Model nahi mila: {path}\nPehle train karo: python src/train_model.py")
+        raise FileNotFoundError(f"Model not found: {path}\nfirst train the model: python src/train_model.py")
     with open(path, 'rb') as f:
         return pickle.load(f)
 
 
 def predict_single(text: str, model=None) -> dict:
-    """Ek tweet ka sentiment predict karo"""
+    """ Single tweet predict"""
     if model is None:
         model = load_model()
     cleaned = clean_text(text)
     sentiment = model.predict([cleaned])[0]
 
-    # Probability (agar available ho)
+    # Probability 
     try:
         probs = model.predict_proba([cleaned])[0]
         classes = model.classes_
@@ -39,7 +32,7 @@ def predict_single(text: str, model=None) -> dict:
 
 
 def predict_batch(texts: list, model=None) -> list:
-    """Multiple tweets predict karo"""
+    """Multiple tweets predict"""
     if model is None:
         model = load_model()
     cleaned = [clean_text(t) for t in texts]
